@@ -318,6 +318,7 @@ public partial class MainWindow : Window
     private double blend = 1;
     private double fadeSpeed = .32;
     private bool dragging;
+    private LocalAgentChatWindow? localAgentChat;
     private System.Windows.Point dragStart;
     private System.Windows.Point windowStart;
 
@@ -363,7 +364,7 @@ public partial class MainWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "运行状态.log"),
-            $"{DateTime.Now:O} v1.15 initialization started\r\n");
+            $"{DateTime.Now:O} v1.17 initialization started\r\n");
         idle = LoadFrames("idle");
         locomotion = LoadFrames("locomotion", true);
         groom = LoadFrames("groom");
@@ -390,7 +391,7 @@ public partial class MainWindow : Window
         decisionTimer.Start();
         Say("这次没有黑框啦～", 3);
         File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "运行状态.log"),
-            $"{DateTime.Now:O} v1.15启动，Frames=201，Motion=FootLocked，BasePoses=Stand|Sit|Lie|Sleep，FaceLayer={(faceLayerAvailable ? "Ready" : "Disabled")}，HeadRig={(headRigAvailable ? "Ready" : "Disabled")}，BodyLook=DirectionalTransition，StandDirectionPoses={(directionPoseCatalogAvailable ? string.Join('|', DirectionPoseOrder.Where(availableDirectionPoses.Contains)) : "Disabled")}\r\n");
+            $"{DateTime.Now:O} v1.17启动，Frames=201，Motion=FootLocked，BasePoses=Stand|Sit|Lie|Sleep，FaceLayer={(faceLayerAvailable ? "Ready" : "Disabled")}，HeadRig={(headRigAvailable ? "Ready" : "Disabled")}，BodyLook=DirectionalTransition，StandDirectionPoses={(directionPoseCatalogAvailable ? string.Join('|', DirectionPoseOrder.Where(availableDirectionPoses.Contains)) : "Disabled")}\r\n");
     }
 
     private static BitmapImage[] LoadFrames(string category, bool dense = false)
@@ -1741,6 +1742,7 @@ public partial class MainWindow : Window
 
     private void Pet_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        localAgentChat?.SetPetHover(false);
         dragging = true;
         dragStart = PointToScreen(e.GetPosition(this));
         windowStart = new System.Windows.Point(Left, Top);
@@ -1776,6 +1778,8 @@ public partial class MainWindow : Window
     private void Pet_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
     {
         var menu = new System.Windows.Controls.ContextMenu();
+        AddMenu(menu, "和团团聊聊（本地 AI）", OpenLocalAgentChat);
+        menu.Items.Add(new System.Windows.Controls.Separator());
         AddMenu(menu, "挥爪", Paw);
         AddMenu(menu, "低头闻一闻", Sniff);
         AddMenu(menu, "坐下看看", SitAndLook);
@@ -1799,6 +1803,40 @@ public partial class MainWindow : Window
         menu.IsOpen = true;
     }
 
+    private void OpenLocalAgentChat()
+    {
+        localAgentChat ??= new LocalAgentChatWindow(PerformAgentPetAction) { Owner = this };
+        localAgentChat.OpenPinned();
+    }
+
+    private void Pet_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (dragging) return;
+        localAgentChat ??= new LocalAgentChatWindow(PerformAgentPetAction) { Owner = this };
+        localAgentChat.SetPetHover(true);
+        localAgentChat.ShowForPetHover();
+    }
+
+    private void Pet_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e) =>
+        localAgentChat?.SetPetHover(false);
+
+    private void PerformAgentPetAction(string action)
+    {
+        switch (action)
+        {
+            case "paw": Paw(); break;
+            case "sniff": Sniff(); break;
+            case "sit": SitStay(); break;
+            case "sleep": Sleep(); break;
+            case "wake": Wake(); break;
+            case "walk": StartWalking(false); break;
+            case "groom": Groom(); break;
+            case "stretch": Stretch(); break;
+            case "blink": TriggerBlink(); break;
+            default: return;
+        }
+    }
+
     private static void AddMenu(System.Windows.Controls.ContextMenu menu, string title, Action action)
     {
         var item = new System.Windows.Controls.MenuItem { Header = title };
@@ -1815,6 +1853,7 @@ public partial class MainWindow : Window
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
+        localAgentChat?.Close();
         trayIcon.Visible = false;
         trayIcon.Dispose();
     }

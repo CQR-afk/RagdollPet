@@ -25,6 +25,8 @@
             <Image x:Name="PetImage" Stretch="Uniform" VerticalAlignment="Bottom"
                    MouseLeftButtonDown="Pet_MouseLeftButtonDown"
                    MouseLeftButtonUp="Pet_MouseLeftButtonUp"
+                   MouseEnter="Pet_MouseEnter"
+                   MouseLeave="Pet_MouseLeave"
                    MouseMove="Pet_MouseMove"
                    MouseRightButtonUp="Pet_MouseRightButtonUp"/>
 

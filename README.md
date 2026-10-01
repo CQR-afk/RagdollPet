@@ -1,6 +1,6 @@
-# 团团 2.5D 桌宠 v1.15
+# 团团 2.5D 桌宠 v1.17
 
-一个以实拍布偶猫“团团”为原型制作的 Windows 透明桌宠。项目采用 WPF 和分层 2.5D 素材，不依赖 3D 骨骼，也不接入联网大模型。
+一个以实拍布偶猫“团团”为原型制作的 Windows 透明桌宠。项目采用 WPF 和分层 2.5D 素材，可选连接本机运行的 Ollama 模型。
 
 ## 当前功能
 
@@ -11,6 +11,8 @@
 - Stand 五向 DirectionPose：Left / Left3Q / Center / Right3Q / Right
 - DirectionPose 中间过渡帧和线性透明度切换
 - 托盘菜单与基础互动
+- 本地 AI 对话、桌宠动作，以及经确认的本机文件/PowerShell 工具
+- 鼠标悬停聊天卡片与多本地模型切换
 
 ## 使用
 
@@ -18,9 +20,28 @@
 - 单击猫咪：互动并跳起来。
 - 拖动猫咪：移动到屏幕其他位置。
 - 右键猫咪：选择摸摸、睡觉、散步或退出。
+- 鼠标移到猫咪上：显示团团聊天卡片；点击卡片可固定，右上角收起。
 - 托盘图标双击也可互动；右键可控制状态和退出。
 
-桌宠会在任务栏上方随机散步、停留或睡觉。程序不联网，也不读取个人文件。
+桌宠会在任务栏上方随机散步、停留或睡觉。鼠标移到团团身上会弹出聊天卡片，移开后短暂延迟收起；点击卡片后会固定显示，右上角可收起。聊天窗口只连接本机 Ollama。经你明确提出并确认后，Agent 也能在当前 Windows 用户权限下读取/写入/删除文件或运行 PowerShell；这些操作会在执行前显示完整目标或命令供你确认。请勿批准不理解的操作。PowerShell 命令可能访问网络或系统资源。
+
+## 本地 AI Agent
+
+使用已安装的 Ollama，并可在聊天窗中切换其本地模型。推荐 `qwen3:14b` 作为中文日常聊天和工具调用主力（Ollama 模型文件约 9.3GB）；`gpt-oss:20b` 可作为强推理模型（本机实测 8K 上下文下约 12GB、100% GPU 常驻；建议先保持 8K，增大上下文会增加显存占用）。模型目录为 `E:\desktop pets\OllamaModels`，由用户级 `OLLAMA_MODELS` 配置。聊天只连接 `http://127.0.0.1:11434`，对话暂存在聊天窗口内存，关闭后清空。
+
+Agent 工具有：固定桌宠动作；按需列出目录/读取 UTF-8 文本（每个文件最多 1MB）；经逐项确认后创建或覆盖文件、删除单个文件、运行 PowerShell（最长 60 秒）。文件写入/删除与每条命令都会先展示完整目标/内容并要求确认，取消则不执行。Agent 不会自行扫描全盘，也不会自行把文件内容发送到外部服务。
+
+首次部署时在 PowerShell 运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Tools\setup-local-agent.ps1
+```
+
+脚本使用你已安装的 Ollama，把模型目录设为 `E:\desktop pets\OllamaModels`，启动本地服务并下载 `qwen3:14b`。完成后将鼠标移到猫咪上打开聊天卡片。首次下载约需 9.3GB 网络流量。若希望额外下载 `gpt-oss:20b`，运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Tools\setup-local-agent.ps1 -IncludeReasoningModel
+```
 
 ## 开发
 
