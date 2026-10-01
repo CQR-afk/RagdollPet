@@ -1,5 +1,6 @@
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -12,7 +13,7 @@ namespace RagdollPet;
 
 public partial class LocalAgentChatWindow : Window
 {
-    private const string Endpoint = "http://127.0.0.1:11434";
+    private const string DefaultEndpoint = "http://127.0.0.1:11434";
     private const string RecommendedModel = "qwen3:14b";
     private const int ContextWindow = 8192;
     private const string SystemPrompt = """
@@ -32,6 +33,7 @@ public partial class LocalAgentChatWindow : Window
     private bool pointerOverPet;
     private bool pinnedOpen;
     private string selectedModel = RecommendedModel;
+    private string endpoint = DefaultEndpoint;
     private readonly DispatcherTimer hideTimer;
 
     public LocalAgentChatWindow(Action<string> performPetAction)
@@ -119,7 +121,8 @@ public partial class LocalAgentChatWindow : Window
         SetBusy(true, "正在检查本地模型…");
         try
         {
-            using var response = await Http.GetAsync($"{Endpoint}/api/tags");
+            await EnsureOllamaServiceAsync();
+            using var response = await Http.GetAsync($"{endpoint}/api/tags");
             response.EnsureSuccessStatusCode();
             await using var stream = await response.Content.ReadAsStreamAsync();
             using var document = await JsonDocument.ParseAsync(stream);
@@ -152,6 +155,100 @@ public partial class LocalAgentChatWindow : Window
         {
             modelReady = false;
             SetBusy(false, "本地模型未连接。请安装/启动 Ollama，然后点“重试连接”。");
+        }
+    }
+
+    private async Task EnsureOllamaServiceAsync()
+    {
+        using var readinessClient = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };
+        string bundledOllama = Path.Combine(AppContext.BaseDirectory, "Ollama", "ollama.exe");
+        string bundledModels = Path.Combine(AppContext.BaseDirectory, "OllamaModels");
+        if (!File.Exists(bundledOllama) || !Directory.Exists(bundledModels))
+        {
+            endpoint = DefaultEndpoint;
+            return;
+        }
+
+        int firstPort = 11434;
+        try
+        {
+            using var existing = await readinessClient.GetAsync($"{DefaultEndpoint}/api/tags");
+            if (existing.IsSuccessStatusCode)
+            {
+                using var document = JsonDocument.Parse(await existing.Content.ReadAsStringAsync());
+                bool bundledModelAvailable = document.RootElement.GetProperty("models").EnumerateArray()
+                    .Any(model => model.TryGetProperty("name", out var name) &&
+                                  name.GetString()?.StartsWith("gpt-oss:20b", StringComparison.OrdinalIgnoreCase) == true);
+                if (bundledModelAvailable)
+                {
+                    endpoint = DefaultEndpoint;
+                    return;
+                }
+                firstPort = 11435;
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            // No existing local Ollama service is available; start the bundled one below.
+        }
+
+        int port = firstPort;
+        for (; port <= 11445; port++)
+        {
+            string candidate = $"http://127.0.0.1:{port}";
+            try
+            {
+                using var occupied = await readinessClient.GetAsync($"{candidate}/api/tags");
+                if (!occupied.IsSuccessStatusCode) continue;
+                using var document = JsonDocument.Parse(await occupied.Content.ReadAsStringAsync());
+                bool hasModel = document.RootElement.GetProperty("models").EnumerateArray()
+                    .Any(model => model.TryGetProperty("name", out var name) &&
+                                  name.GetString()?.StartsWith("gpt-oss:20b", StringComparison.OrdinalIgnoreCase) == true);
+                if (hasModel)
+                {
+                    endpoint = candidate;
+                    return;
+                }
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+            {
+                endpoint = candidate;
+                break;
+            }
+        }
+        if (port > 11445) return;
+
+        string ollamaHome = Path.GetDirectoryName(bundledOllama)!;
+        string temporaryDirectory = Path.Combine(AppContext.BaseDirectory, "OllamaTemp");
+        Directory.CreateDirectory(temporaryDirectory);
+
+        var start = new System.Diagnostics.ProcessStartInfo(bundledOllama, "serve")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
+            WorkingDirectory = ollamaHome
+        };
+        start.Environment["OLLAMA_MODELS"] = bundledModels;
+        start.Environment["OLLAMA_HOST"] = $"127.0.0.1:{port}";
+        start.Environment["OLLAMA_NO_CLOUD"] = "1";
+        start.Environment["OLLAMA_TMPDIR"] = temporaryDirectory;
+        start.Environment["TEMP"] = temporaryDirectory;
+        start.Environment["TMP"] = temporaryDirectory;
+        System.Diagnostics.Process.Start(start)?.Dispose();
+
+        for (int attempt = 0; attempt < 45; attempt++)
+        {
+            await Task.Delay(1000);
+            try
+            {
+                using var response = await readinessClient.GetAsync($"{endpoint}/api/tags");
+                if (response.IsSuccessStatusCode) return;
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                // Keep waiting while the bundled local service initializes.
+            }
         }
     }
 
@@ -272,7 +369,7 @@ public partial class LocalAgentChatWindow : Window
         {
             payload["tools"] = AgentToolExecutor.ToolDefinitions;
         }
-        return Http.PostAsJsonAsync($"{Endpoint}/api/chat", payload);
+        return Http.PostAsJsonAsync($"{endpoint}/api/chat", payload);
     }
 
     private void SetBusy(bool value, string status)

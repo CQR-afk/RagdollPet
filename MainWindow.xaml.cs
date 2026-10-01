@@ -364,7 +364,7 @@ public partial class MainWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "运行状态.log"),
-            $"{DateTime.Now:O} v1.17 initialization started\r\n");
+            $"{DateTime.Now:O} v1.18 initialization started\r\n");
         idle = LoadFrames("idle");
         locomotion = LoadFrames("locomotion", true);
         groom = LoadFrames("groom");
@@ -391,7 +391,7 @@ public partial class MainWindow : Window
         decisionTimer.Start();
         Say("这次没有黑框啦～", 3);
         File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "运行状态.log"),
-            $"{DateTime.Now:O} v1.17启动，Frames=201，Motion=FootLocked，BasePoses=Stand|Sit|Lie|Sleep，FaceLayer={(faceLayerAvailable ? "Ready" : "Disabled")}，HeadRig={(headRigAvailable ? "Ready" : "Disabled")}，BodyLook=DirectionalTransition，StandDirectionPoses={(directionPoseCatalogAvailable ? string.Join('|', DirectionPoseOrder.Where(availableDirectionPoses.Contains)) : "Disabled")}\r\n");
+            $"{DateTime.Now:O} v1.18启动，Frames=201，Motion=FootLocked，BasePoses=Stand|Sit|Lie|Sleep，FaceLayer={(faceLayerAvailable ? "Ready" : "Disabled")}，HeadRig={(headRigAvailable ? "Ready" : "Disabled")}，BodyLook=DirectionalTransition，StandDirectionPoses={(directionPoseCatalogAvailable ? string.Join('|', DirectionPoseOrder.Where(availableDirectionPoses.Contains)) : "Disabled")}\r\n");
     }
 
     private static BitmapImage[] LoadFrames(string category, bool dense = false)

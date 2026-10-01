@@ -1,4 +1,4 @@
-# 团团 2.5D 桌宠 v1.17
+# 团团 2.5D 桌宠 v1.18
 
 一个以实拍布偶猫“团团”为原型制作的 Windows 透明桌宠。项目采用 WPF 和分层 2.5D 素材，可选连接本机运行的 Ollama 模型。
 
@@ -52,6 +52,8 @@ dotnet run --project .\RagdollPet.csproj
 ```
 
 ## 发布
+
+GitHub 的 `v1.18` Release 提供携带 `gpt-oss:20b` 的 Windows x64 便携包。解压后直接双击 `团团2.5D桌宠.exe`；聊天卡片首次打开时会自动启动包内 Ollama 服务，不要求另装 .NET 或 Ollama。模型和推理临时文件都保存在包目录中；建议显卡显存至少 16GB，并预留约 40GB 磁盘空间用于下载、解压和运行。
 
 生成无需预装 .NET Desktop Runtime 的 Windows x64 版本：
 
