@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "transitionOrder": ["Left", "Left3Q", "Center", "Right3Q", "Right"],
+  "crossfadeDurationMs": 120,
+  "transitionHeadLookStrength": 0.35,
+  "transitionEarLookStrength": 0.60,
+  "lookStrengthRecoverySmoothing": 0.14,
+  "headSafeZones": {
+    "Left": {
+      "headMinX": -3.0,
+      "headMaxX": 2.0,
+      "headMinY": -1.5,
+      "headMaxY": 2.0,
+      "headRotateMin": -2.5,
+      "headRotateMax": 3.0
+    },
+    "Center": {
+      "headMinX": -10.0,
+      "headMaxX": 10.0,
+      "headMinY": -5.0,
+      "headMaxY": 5.0,
+      "headRotateMin": -7.0,
+      "headRotateMax": 7.0
+    },
+    "Left3Q": {
+      "headMinX": -6.0,
+      "headMaxX": 4.0,
+      "headMinY": -2.5,
+      "headMaxY": 3.5,
+      "headRotateMin": -4.0,
+      "headRotateMax": 5.0
+    },
+    "Right3Q": {
+      "headMinX": -5.0,
+      "headMaxX": 3.5,
+      "headMinY": -2.5,
+      "headMaxY": 3.0,
+      "headRotateMin": -3.5,
+      "headRotateMax": 4.5
+    },
+    "Right": {
+      "headMinX": -2.0,
+      "headMaxX": 3.0,
+      "headMinY": -1.5,
+      "headMaxY": 2.0,
+      "headRotateMin": -3.0,
+      "headRotateMax": 2.5
+    }
+  },
+  "faceProfiles": {
+    "Left": {
+      "pupilLStrength": 0.35,
+      "pupilRStrength": 1.0,
+      "headLookStrength": 0.45,
+      "earLookStrength": 0.50
+    },
+    "Left3Q": {
+      "pupilLStrength": 0.78,
+      "pupilRStrength": 1.0,
+      "headLookStrength": 0.82,
+      "earLookStrength": 0.82
+    },
+    "Center": {
+      "pupilLStrength": 1.0,
+      "pupilRStrength": 1.0,
+      "headLookStrength": 1.0,
+      "earLookStrength": 1.0
+    },
+    "Right3Q": {
+      "pupilLStrength": 1.0,
+      "pupilRStrength": 0.78,
+      "headLookStrength": 0.82,
+      "earLookStrength": 0.82
+    },
+    "Right": {
+      "pupilLStrength": 1.0,
+      "pupilRStrength": 0.35,
+      "headLookStrength": 0.45,
+      "earLookStrength": 0.50
+    }
+  },
+  "poses": {
+    "Left": {
+      "available": true,
+      "folder": "DirectionPoses/{BasePose}/Left",
+      "requiredLayers": ["Body_Base", "UpperBody_Base", "Head_Base", "Neck_Fur", "Chest_Fur", "Ear_L", "Ear_R", "Eye_Base", "Pupil_L", "Pupil_R", "Blink_Closed"]
+    },
+    "Center": {
+      "available": true,
+      "runtimeSource": "HeadRig/{BasePose}",
+      "layers": ["Body_Base", "UpperBody_Base", "Head_Base", "Neck_Fur", "Chest_Fur", "FaceLayer"]
+    },
+    "Left3Q": {
+      "available": true,
+      "folder": "DirectionPoses/{BasePose}/Left3Q",
+      "requiredLayers": ["Body_Base", "UpperBody_Base", "Head_Base", "Neck_Fur", "Chest_Fur", "Ear_L", "Ear_R", "Eye_Base", "Pupil_L", "Pupil_R", "Blink_Closed"]
+    },
+    "Right3Q": {
+      "available": true,
+      "folder": "DirectionPoses/{BasePose}/Right3Q",
+      "requiredLayers": ["Body_Base", "UpperBody_Base", "Head_Base", "Neck_Fur", "Chest_Fur", "Ear_L", "Ear_R", "Eye_Base", "Pupil_L", "Pupil_R", "Blink_Closed"]
+    },
+    "Right": {
+      "available": true,
+      "folder": "DirectionPoses/{BasePose}/Right",
+      "requiredLayers": ["Body_Base", "UpperBody_Base", "Head_Base", "Neck_Fur", "Chest_Fur", "Ear_L", "Ear_R", "Eye_Base", "Pupil_L", "Pupil_R", "Blink_Closed"]
+    }
+  },
+  "hysteresis": {
+    "centerToThreeQuarter": 0.45,
+    "threeQuarterToSide": 0.82,
+    "sideToThreeQuarter": 0.68,
+    "threeQuarterToCenter": 0.30,
+    "directLeftRightTransition": false,
+    "threeQuarterHoldMs": [300, 450],
+    "sideHoldMs": [450, 700]
+  }
+}

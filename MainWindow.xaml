@@ -1,0 +1,100 @@
+<Window x:Class="RagdollPet.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:RagdollPet"
+        Title="团团2.5D桌宠" Width="540" Height="520"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        ShowActivated="False">
+    <Grid x:Name="Root">
+        <Ellipse Width="330" Height="36" VerticalAlignment="Bottom" Margin="0,0,0,9"
+                 Fill="#32000000" IsHitTestVisible="False">
+            <Ellipse.Effect><BlurEffect Radius="15"/></Ellipse.Effect>
+        </Ellipse>
+
+        <Grid x:Name="PetVisual" Margin="6,0,6,4" RenderTransformOrigin="0.5,1">
+            <Grid.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform x:Name="PetScale" ScaleX="1" ScaleY="1"/>
+                    <RotateTransform x:Name="PetRotate" Angle="0"/>
+                    <TranslateTransform x:Name="PetOffset" Y="0"/>
+                </TransformGroup>
+            </Grid.RenderTransform>
+            <Image x:Name="PreviousImage" Stretch="Uniform" VerticalAlignment="Bottom"
+                   IsHitTestVisible="False" Opacity="0"/>
+            <Image x:Name="PetImage" Stretch="Uniform" VerticalAlignment="Bottom"
+                   MouseLeftButtonDown="Pet_MouseLeftButtonDown"
+                   MouseLeftButtonUp="Pet_MouseLeftButtonUp"
+                   MouseMove="Pet_MouseMove"
+                   MouseRightButtonUp="Pet_MouseRightButtonUp"/>
+
+            <!-- FaceLayer is a pose-independent additive controller.  Its
+                 512-square coordinate system matches every authored sprite. -->
+            <Viewbox x:Name="FaceLayerHost" Stretch="Uniform" IsHitTestVisible="False" Opacity="0">
+                <Canvas x:Name="FaceCanvas" Width="512" Height="512">
+                    <Image x:Name="RigBodyLayer" Width="512" Height="512"/>
+                    <Canvas x:Name="UpperBodyGroup" Width="512" Height="512">
+                        <Canvas.RenderTransform>
+                            <TransformGroup>
+                                <SkewTransform x:Name="UpperBodySkewTransform"/>
+                                <TranslateTransform x:Name="UpperBodyTranslateTransform"/>
+                            </TransformGroup>
+                        </Canvas.RenderTransform>
+                        <Image x:Name="UpperBodyBaseLayer" Width="512" Height="512"/>
+                        <Canvas x:Name="HeadGroup" Width="512" Height="512">
+                            <Canvas.RenderTransform>
+                                <TransformGroup>
+                                    <RotateTransform x:Name="HeadRotateTransform"/>
+                                    <TranslateTransform x:Name="HeadTranslateTransform"/>
+                                </TransformGroup>
+                            </Canvas.RenderTransform>
+                            <Image x:Name="HeadBaseLayer" Width="512" Height="512"/>
+                            <Image x:Name="EyeBaseLayer" Width="512" Height="512"/>
+                            <Canvas x:Name="PupilLViewport" Width="512" Height="512">
+                                <Image x:Name="PupilLLayer" Width="512" Height="512">
+                                    <Image.RenderTransform><TranslateTransform x:Name="PupilLTransform"/></Image.RenderTransform>
+                                </Image>
+                            </Canvas>
+                            <Canvas x:Name="PupilRViewport" Width="512" Height="512">
+                                <Image x:Name="PupilRLayer" Width="512" Height="512">
+                                    <Image.RenderTransform><TranslateTransform x:Name="PupilRTransform"/></Image.RenderTransform>
+                                </Image>
+                            </Canvas>
+                            <Image x:Name="BlinkClosedLayer" Width="512" Height="512" Opacity="0"/>
+                            <Image x:Name="EarLLayer">
+                                <Image.RenderTransform><RotateTransform x:Name="EarLRotate"/></Image.RenderTransform>
+                            </Image>
+                            <Image x:Name="EarRLayer">
+                                <Image.RenderTransform><RotateTransform x:Name="EarRRotate"/></Image.RenderTransform>
+                            </Image>
+                        </Canvas>
+                        <Image x:Name="NeckFurLayer" Width="512" Height="512"/>
+                        <Image x:Name="ChestFurLayer" Width="512" Height="512"/>
+                    </Canvas>
+                </Canvas>
+            </Viewbox>
+
+            <!-- v1.14: Stand-only DirectionPose roots.  All five stay alive so
+                 face parameters remain continuous during an opacity crossfade. -->
+            <Viewbox x:Name="StandDirectionPoseHost" Stretch="Uniform"
+                     IsHitTestVisible="False" Opacity="0">
+                <Canvas Width="512" Height="512">
+                    <local:StandDirectionPoseRoot x:Name="Stand_Left_Root" Opacity="0"/>
+                    <local:StandDirectionPoseRoot x:Name="Stand_Left3Q_Root" Opacity="0"/>
+                    <local:StandDirectionPoseRoot x:Name="Stand_Center_Root" Opacity="1"/>
+                    <local:StandDirectionPoseRoot x:Name="Stand_Right3Q_Root" Opacity="0"/>
+                    <local:StandDirectionPoseRoot x:Name="Stand_Right_Root" Opacity="0"/>
+                    <Image x:Name="DirectionBridgeFromImage" Width="512" Height="512" Opacity="0"/>
+                    <Image x:Name="DirectionBridgeToImage" Width="512" Height="512" Opacity="0"/>
+                </Canvas>
+            </Viewbox>
+        </Grid>
+
+        <Border x:Name="SpeechBubble" HorizontalAlignment="Center" VerticalAlignment="Top"
+                Margin="10,5,10,0" Padding="14,7" CornerRadius="15"
+                Background="#F2FFFFFF" BorderBrush="#558F8178" BorderThickness="1"
+                Opacity="0" IsHitTestVisible="False">
+            <TextBlock x:Name="SpeechText" Foreground="#493E39" FontSize="14" Text="喵～"/>
+        </Border>
+    </Grid>
+</Window>

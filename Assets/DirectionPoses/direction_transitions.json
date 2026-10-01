@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "easing": "smoothstep",
+  "clips": {
+    "Center_Left3Q": {
+      "source": "Center",
+      "target": "Left3Q",
+      "durationMs": 320,
+      "bridgeFrames": [
+        { "file": "DirectionPoses/Transitions/Center_Left3Q/Bridge01.png", "at": 0.34, "placeholder": "source" },
+        { "file": "DirectionPoses/Transitions/Center_Left3Q/Bridge02.png", "at": 0.67, "placeholder": "target" }
+      ],
+      "layerTiming": {
+        "eye": [0.00, 0.34],
+        "head": [0.10, 0.62],
+        "ear": [0.08, 0.78],
+        "upperBody": [0.24, 0.84],
+        "chest": [0.30, 0.90],
+        "body": [0.48, 1.00]
+      }
+    },
+    "Left3Q_Left": {
+      "source": "Left3Q",
+      "target": "Left",
+      "durationMs": 380,
+      "bridgeFrames": [
+        { "file": "DirectionPoses/Transitions/Left3Q_Left/Bridge01.png", "at": 0.34, "placeholder": "source" },
+        { "file": "DirectionPoses/Transitions/Left3Q_Left/Bridge02.png", "at": 0.67, "placeholder": "target" }
+      ],
+      "layerTiming": {
+        "eye": [0.00, 0.30],
+        "head": [0.10, 0.58],
+        "ear": [0.08, 0.82],
+        "upperBody": [0.26, 0.84],
+        "chest": [0.34, 0.91],
+        "body": [0.52, 1.00]
+      }
+    },
+    "Center_Right3Q": {
+      "source": "Center",
+      "target": "Right3Q",
+      "durationMs": 320,
+      "bridgeFrames": [
+        { "file": "DirectionPoses/Transitions/Center_Right3Q/Bridge01.png", "at": 0.34, "placeholder": "source" },
+        { "file": "DirectionPoses/Transitions/Center_Right3Q/Bridge02.png", "at": 0.67, "placeholder": "target" }
+      ],
+      "layerTiming": {
+        "eye": [0.00, 0.34],
+        "head": [0.10, 0.62],
+        "ear": [0.08, 0.78],
+        "upperBody": [0.24, 0.84],
+        "chest": [0.30, 0.90],
+        "body": [0.48, 1.00]
+      }
+    },
+    "Right3Q_Right": {
+      "source": "Right3Q",
+      "target": "Right",
+      "durationMs": 380,
+      "bridgeFrames": [
+        { "file": "DirectionPoses/Transitions/Right3Q_Right/Bridge01.png", "at": 0.34, "placeholder": "source" },
+        { "file": "DirectionPoses/Transitions/Right3Q_Right/Bridge02.png", "at": 0.67, "placeholder": "target" }
+      ],
+      "layerTiming": {
+        "eye": [0.00, 0.30],
+        "head": [0.10, 0.58],
+        "ear": [0.08, 0.82],
+        "upperBody": [0.26, 0.84],
+        "chest": [0.34, 0.91],
+        "body": [0.52, 1.00]
+      }
+    }
+  }
+}

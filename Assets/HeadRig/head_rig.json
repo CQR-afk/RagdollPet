@@ -1,0 +1,100 @@
+{
+  "canvas": [
+    512,
+    512
+  ],
+  "poses": {
+    "Stand": {
+      "pivot": [
+        401,
+        278
+      ],
+      "headMask": [
+        400,
+        220,
+        115,
+        135
+      ],
+      "bodyClearMask": [
+        400,
+        210,
+        78,
+        96
+      ],
+      "neckMask": [
+        403,
+        294,
+        68,
+        24
+      ],
+      "chestMask": [
+        406,
+        350,
+        76,
+        62
+      ],
+      "upperBodyMask": [
+        378,
+        330,
+        92,
+        112
+      ],
+      "upperBodyClearMask": [
+        378,
+        334,
+        72,
+        91
+      ],
+      "upperBodyPivot": [
+        370,
+        408
+      ]
+    },
+    "Sit": {
+      "pivot": [
+        372,
+        286
+      ],
+      "headMask": [
+        371,
+        238,
+        110,
+        135
+      ],
+      "bodyClearMask": [
+        371,
+        226,
+        73,
+        93
+      ],
+      "neckMask": [
+        374,
+        307,
+        65,
+        23
+      ],
+      "chestMask": [
+        380,
+        366,
+        70,
+        64
+      ],
+      "upperBodyMask": [
+        350,
+        338,
+        94,
+        118
+      ],
+      "upperBodyClearMask": [
+        350,
+        342,
+        73,
+        96
+      ],
+      "upperBodyPivot": [
+        345,
+        420
+      ]
+    }
+  }
+}

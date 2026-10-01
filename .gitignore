@@ -1,0 +1,29 @@
+# .NET build output
+bin/
+obj/
+.verify/
+
+# IDE state
+.vs/
+.vscode/
+*.user
+*.suo
+*.userprefs
+
+# Local logs and crash dumps
+*.log
+*.dmp
+
+# Local publish/output folders
+publish/
+dist/
+Release/
+
+# Python helper caches
+__pycache__/
+*.py[cod]
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store

@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "coordinateSystem": {
+    "canvas": [540, 520],
+    "origin": "bottom-center",
+    "groundY": 516
+  },
+  "layerOrder": [
+    "Shadow",
+    "Tail_01",
+    "Tail_02",
+    "Tail_03",
+    "HindLeg_Far",
+    "FrontLeg_Far",
+    "Body_Main",
+    "Belly_Fur",
+    "HindLeg_Near",
+    "FrontLeg_Near",
+    "Chest_Fur",
+    "Head_Base",
+    "Ear_L",
+    "Ear_R",
+    "Eye_L",
+    "Eye_R"
+  ],
+  "poses": {
+    "Stand_Base": {
+      "runtimeSource": "Sprites/idle/idle_00.png",
+      "layerAtlas": "BasePoses/Stand_Base/Stand_Base_Layers.png",
+      "breathAmplitude": 0.0018,
+      "breathHz": 0.27,
+      "headRotationLimitDegrees": 2.0,
+      "bodyWarpLimitPercent": 1.2
+    },
+    "Sit_Base": {
+      "runtimeSource": "SpritesDense/curious_groom/curious_groom_08.png",
+      "layerAtlas": "BasePoses/Sit_Base/Sit_Base_Layers.png",
+      "breathAmplitude": 0.0015,
+      "breathHz": 0.24,
+      "headRotationLimitDegrees": 2.5,
+      "bodyWarpLimitPercent": 1.0
+    },
+    "Lie_Base": {
+      "runtimeSource": "SpritesDense/sleep_enter/sleep_enter_07.png",
+      "status": "planned"
+    },
+    "Sleep_Base": {
+      "runtimeSource": "SpritesDense/sleep_enter/sleep_enter_07.png",
+      "breathAmplitude": 0.0025,
+      "breathHz": 0.20,
+      "status": "runtime-stable; layered-atlas-planned"
+    }
+  },
+  "transitions": {
+    "Stand_Base->Sit_Base": {
+      "sequence": "SpritesDense/curious_groom",
+      "frames": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      "fps": 20
+    },
+    "Sit_Base->Stand_Base": {
+      "sequence": "SpritesDense/curious_groom",
+      "frames": [8, 7, 6, 5, 4, 3, 2, 1, 0],
+      "fps": 20
+    }
+  },
+  "atlasCells": [
+    "Body_Main", "Chest_Fur", "Belly_Fur", "Head_Base",
+    "Ear_L", "Ear_R", "Eye_L", "Eye_R",
+    "FrontLeg_Near", "FrontLeg_Far", "HindLeg_Near", "HindLeg_Far",
+    "Tail_01", "Tail_02", "Tail_03", "Shadow"
+  ]
+}

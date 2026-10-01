@@ -1,0 +1,47 @@
+<UserControl x:Class="RagdollPet.StandDirectionPoseRoot"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="512" Height="512" IsHitTestVisible="False">
+    <Canvas x:Name="RootCanvas" Width="512" Height="512">
+        <!-- Runtime order is identical for all five Stand direction poses. -->
+        <Image x:Name="BodyBaseLayer" Width="512" Height="512"/>
+        <Canvas x:Name="UpperBodyGroup" Width="512" Height="512">
+            <Canvas.RenderTransform>
+                <TransformGroup>
+                    <SkewTransform x:Name="UpperBodySkewTransform"/>
+                    <TranslateTransform x:Name="UpperBodyTranslateTransform"/>
+                </TransformGroup>
+            </Canvas.RenderTransform>
+            <Image x:Name="UpperBodyBaseLayer" Width="512" Height="512"/>
+            <Canvas x:Name="HeadGroup" Width="512" Height="512">
+                <Canvas.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform x:Name="HeadRotateTransform"/>
+                        <TranslateTransform x:Name="HeadTranslateTransform"/>
+                    </TransformGroup>
+                </Canvas.RenderTransform>
+                <Image x:Name="HeadBaseLayer" Width="512" Height="512"/>
+                <Image x:Name="NeckFurLayer" Width="512" Height="512"/>
+                <Image x:Name="ChestFurLayer" Width="512" Height="512"/>
+                <Image x:Name="EarLLayer">
+                    <Image.RenderTransform><RotateTransform x:Name="EarLRotate"/></Image.RenderTransform>
+                </Image>
+                <Image x:Name="EarRLayer">
+                    <Image.RenderTransform><RotateTransform x:Name="EarRRotate"/></Image.RenderTransform>
+                </Image>
+                <Image x:Name="EyeBaseLayer" Width="512" Height="512"/>
+                <Canvas x:Name="PupilLViewport" Width="512" Height="512">
+                    <Image x:Name="PupilLLayer" Width="512" Height="512">
+                        <Image.RenderTransform><TranslateTransform x:Name="PupilLTransform"/></Image.RenderTransform>
+                    </Image>
+                </Canvas>
+                <Canvas x:Name="PupilRViewport" Width="512" Height="512">
+                    <Image x:Name="PupilRLayer" Width="512" Height="512">
+                        <Image.RenderTransform><TranslateTransform x:Name="PupilRTransform"/></Image.RenderTransform>
+                    </Image>
+                </Canvas>
+                <Image x:Name="BlinkClosedLayer" Width="512" Height="512" Opacity="0"/>
+            </Canvas>
+        </Canvas>
+    </Canvas>
+</UserControl>

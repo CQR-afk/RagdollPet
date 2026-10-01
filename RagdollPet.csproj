@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>团团2.5D桌宠</AssemblyName>
+    <RootNamespace>RagdollPet</RootNamespace>
+    <ApplicationIcon>Assets\pet.ico</ApplicationIcon>
+    <DefaultItemExcludes>$(DefaultItemExcludes);.verify\**</DefaultItemExcludes>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="LegacyProgram.cs" />
+    <Content Include="Assets\Sprites\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\SpritesDense\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\BasePoses\**\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\PoseProfiles\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\FaceLayers\**\*.png"
+             Exclude="Assets\FaceLayers\Source\**\*.png"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\FaceLayers\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\HeadRig\**\*.png"
+             Exclude="Assets\HeadRig\Source\**\*.png"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\HeadRig\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\DirectionPoses\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\DirectionPoses\Stand\**\*.png"
+             Exclude="Assets\DirectionPoses\Stand\**\_Preview_*.png"
+             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\DirectionPoses\Transitions\**\*.png"
+             CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

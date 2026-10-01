@@ -1,0 +1,266 @@
+{
+  "version": 1,
+  "canvas": [
+    512,
+    512
+  ],
+  "sourcePolicy": "approved-pose-only",
+  "poses": {
+    "Left": {
+      "source": "Assets/DirectionPoses/Candidates/v1.14/Stand_Left_03.png",
+      "sourceSha256": "608ba22ff1eef913e7938bb29c5de426ad186e8c47c2830b0d82688e5aa25fb9",
+      "folder": "Assets/DirectionPoses/Stand/Left",
+      "canvasAlignedLayers": true,
+      "headPivot": [
+        361,
+        292
+      ],
+      "upperBodyPivot": [
+        344,
+        419
+      ],
+      "eyes": [
+        [
+          328,
+          220
+        ],
+        [
+          365,
+          231
+        ]
+      ],
+      "ears": [
+        {
+          "pivot": [
+            337,
+            198
+          ],
+          "box": [
+            306,
+            142,
+            357,
+            207
+          ]
+        },
+        {
+          "pivot": [
+            403,
+            207
+          ],
+          "box": [
+            382,
+            168,
+            432,
+            219
+          ]
+        }
+      ],
+      "neutralAssemblyMeanRgbError": 0.342,
+      "layers": [
+        "Body_Base.png",
+        "UpperBody_Base.png",
+        "Head_Base.png",
+        "Neck_Fur.png",
+        "Chest_Fur.png",
+        "Ear_L.png",
+        "Ear_R.png",
+        "Eye_Base.png",
+        "Pupil_L.png",
+        "Pupil_R.png",
+        "Blink_Closed.png"
+      ]
+    },
+    "Left3Q": {
+      "source": "Assets/DirectionPoses/Candidates/Stand_Left3Q_02.png",
+      "sourceSha256": "7b72c61ea013d7bb3d36c93171f41820f0e30f674af362f3697c01d688be9fb6",
+      "folder": "Assets/DirectionPoses/Stand/Left3Q",
+      "canvasAlignedLayers": true,
+      "headPivot": [
+        379,
+        281
+      ],
+      "upperBodyPivot": [
+        351,
+        416
+      ],
+      "eyes": [
+        [
+          348,
+          208
+        ],
+        [
+          392,
+          211
+        ]
+      ],
+      "ears": [
+        {
+          "pivot": [
+            344,
+            188
+          ],
+          "box": [
+            313,
+            136,
+            366,
+            199
+          ]
+        },
+        {
+          "pivot": [
+            432,
+            188
+          ],
+          "box": [
+            405,
+            136,
+            451,
+            200
+          ]
+        }
+      ],
+      "neutralAssemblyMeanRgbError": 0.345,
+      "layers": [
+        "Body_Base.png",
+        "UpperBody_Base.png",
+        "Head_Base.png",
+        "Neck_Fur.png",
+        "Chest_Fur.png",
+        "Ear_L.png",
+        "Ear_R.png",
+        "Eye_Base.png",
+        "Pupil_L.png",
+        "Pupil_R.png",
+        "Blink_Closed.png"
+      ]
+    },
+    "Right3Q": {
+      "source": "Assets/DirectionPoses/Candidates/Stand_Right3Q_03.png",
+      "sourceSha256": "ecdf3b70dbc91220e15c745ad5a955849d6d5c0afce46826243e645b4b4a153d",
+      "folder": "Assets/DirectionPoses/Stand/Right3Q",
+      "canvasAlignedLayers": true,
+      "headPivot": [
+        409,
+        281
+      ],
+      "upperBodyPivot": [
+        379,
+        416
+      ],
+      "eyes": [
+        [
+          395,
+          209
+        ],
+        [
+          434,
+          210
+        ]
+      ],
+      "ears": [
+        {
+          "pivot": [
+            372,
+            188
+          ],
+          "box": [
+            345,
+            136,
+            398,
+            200
+          ]
+        },
+        {
+          "pivot": [
+            447,
+            188
+          ],
+          "box": [
+            417,
+            136,
+            467,
+            198
+          ]
+        }
+      ],
+      "neutralAssemblyMeanRgbError": 0.57,
+      "layers": [
+        "Body_Base.png",
+        "UpperBody_Base.png",
+        "Head_Base.png",
+        "Neck_Fur.png",
+        "Chest_Fur.png",
+        "Ear_L.png",
+        "Ear_R.png",
+        "Eye_Base.png",
+        "Pupil_L.png",
+        "Pupil_R.png",
+        "Blink_Closed.png"
+      ]
+    },
+    "Right": {
+      "source": "Assets/DirectionPoses/Candidates/v1.14/Stand_Right_03.png",
+      "sourceSha256": "83ededf655c56cb58e2de32ff184924dacdbdd88905765cebd23602531079962",
+      "folder": "Assets/DirectionPoses/Stand/Right",
+      "canvasAlignedLayers": true,
+      "headPivot": [
+        423,
+        291
+      ],
+      "upperBodyPivot": [
+        394,
+        419
+      ],
+      "eyes": [
+        [
+          421,
+          213
+        ],
+        [
+          452,
+          211
+        ]
+      ],
+      "ears": [
+        {
+          "pivot": [
+            387,
+            199
+          ],
+          "box": [
+            355,
+            145,
+            411,
+            211
+          ]
+        },
+        {
+          "pivot": [
+            453,
+            192
+          ],
+          "box": [
+            430,
+            141,
+            478,
+            203
+          ]
+        }
+      ],
+      "neutralAssemblyMeanRgbError": 0.509,
+      "layers": [
+        "Body_Base.png",
+        "UpperBody_Base.png",
+        "Head_Base.png",
+        "Neck_Fur.png",
+        "Chest_Fur.png",
+        "Ear_L.png",
+        "Ear_R.png",
+        "Eye_Base.png",
+        "Pupil_L.png",
+        "Pupil_R.png",
+        "Blink_Closed.png"
+      ]
+    }
+  }
+}
