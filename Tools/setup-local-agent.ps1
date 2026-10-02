@@ -1,11 +1,7 @@
-param(
-    [switch]$IncludeReasoningModel
-)
-
 $ErrorActionPreference = 'Stop'
 
-$model = 'qwen3:14b'
-$workspaceRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$model = 'hf.co/ornith-ai/Ornith-1.0-9B-GGUF:Q4_K_M'
+$workspaceRoot = Split-Path -Parent $PSScriptRoot
 $modelRoot = Join-Path $workspaceRoot 'OllamaModels'
 New-Item -ItemType Directory -Path $modelRoot -Force | Out-Null
 [Environment]::SetEnvironmentVariable('OLLAMA_MODELS', $modelRoot, 'User')
@@ -24,8 +20,12 @@ if (-not $ollama) {
 }
 
 $api = 'http://127.0.0.1:11434'
-try { $null = Invoke-RestMethod -Uri "$api/api/tags" -TimeoutSec 2 }
+try {
+    $null = Invoke-RestMethod -Uri "$api/api/tags" -TimeoutSec 2
+    throw "Ollama is already running. Quit it from the system tray, then rerun this script so the model is saved under $modelRoot. No model was downloaded."
+}
 catch {
+    if ($_.Exception.Message -like 'Ollama is already running.*') { throw }
     Write-Host 'Starting the local Ollama service...'
     Start-Process -FilePath $ollamaPath -ArgumentList 'serve' -WindowStyle Hidden
     $ready = $false
@@ -37,18 +37,12 @@ catch {
     if (-not $ready) { throw 'Ollama did not start on 127.0.0.1:11434.' }
 }
 
-Write-Host "Downloading $model (about 9.3 GB)..."
+Write-Host "Downloading $model (about 5.6 GB)..."
 & $ollamaPath pull $model
 if ($LASTEXITCODE -ne 0) { throw "Ollama failed to download $model (exit code $LASTEXITCODE)." }
 
-if ($IncludeReasoningModel) {
-    Write-Host 'Downloading optional gpt-oss:20b (about 14 GB). This is a tight fit for a 16 GB GPU; keep context at 8K.'
-    & $ollamaPath pull 'gpt-oss:20b'
-    if ($LASTEXITCODE -ne 0) { throw "Ollama failed to download gpt-oss:20b (exit code $LASTEXITCODE)." }
-}
-
 $installed = Invoke-RestMethod -Uri "$api/api/tags"
-if (-not ($installed.models | Where-Object { $_.name -like 'qwen3:14b*' })) {
+if (-not ($installed.models | Where-Object { $_.name -like "$model*" })) {
     throw "The model download finished, but $model is not listed by Ollama."
 }
 
@@ -57,4 +51,3 @@ Write-Host 'Local agent is ready.' -ForegroundColor Green
 Write-Host "Model: $model"
 Write-Host "API:   $api (loopback only)"
 Write-Host 'Open RagdollPet and right-click the cat to choose the local AI chat.'
-if (-not $IncludeReasoningModel) { Write-Host 'Optional: rerun with -IncludeReasoningModel to add gpt-oss:20b.' }

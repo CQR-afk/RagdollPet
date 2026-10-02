@@ -13,6 +13,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Speech" Version="8.0.0" />
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.63.0" />
     <Compile Remove="LegacyProgram.cs" />
     <Content Include="Assets\Sprites\**\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\SpritesDense\**\*.png" CopyToOutputDirectory="PreserveNewest" />

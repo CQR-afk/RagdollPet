@@ -1,5 +1,11 @@
 $ErrorActionPreference = 'Stop'
 $model = 'qwen3:4b'
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$modelRoot = Join-Path $repoRoot 'OllamaModels'
+New-Item -ItemType Directory -Path $modelRoot -Force | Out-Null
+[Environment]::SetEnvironmentVariable('OLLAMA_MODELS', $modelRoot, 'User')
+$env:OLLAMA_MODELS = $modelRoot
+
 $ollama = Get-Command 'ollama' -ErrorAction SilentlyContinue
 if (-not $ollama) {
     $candidatePaths = @(
@@ -13,8 +19,12 @@ if (-not $ollama) {
 }
 
 $api = 'http://127.0.0.1:11434'
-try { $null = Invoke-RestMethod -Uri "$api/api/tags" -TimeoutSec 2 }
+try {
+    $null = Invoke-RestMethod -Uri "$api/api/tags" -TimeoutSec 2
+    throw "Ollama is already running. Quit Ollama from the system tray, then rerun this script so the model is downloaded to $modelRoot. No model was downloaded."
+}
 catch {
+    if ($_.Exception.Message -like 'Ollama is already running.*') { throw }
     Write-Host 'Starting local Ollama...'
     Start-Process -FilePath $ollamaPath -ArgumentList 'serve' -WindowStyle Hidden
     $ready = $false
@@ -37,4 +47,5 @@ if (-not ($installed.models | Where-Object { $_.name -like 'qwen3:4b*' })) {
 Write-Host ''
 Write-Host 'Lightweight model is ready.' -ForegroundColor Green
 Write-Host 'Default model: qwen3:4b (about 2.5 GB, suitable for the 8 GB VRAM tier).'
-Write-Host 'The model is stored in the current Ollama model directory; existing models are not removed or replaced.'
+Write-Host "Model directory: $modelRoot"
+Write-Host 'Existing models are not removed or replaced.'
