@@ -52,6 +52,7 @@ if ($null -eq $release) {
 $existingAsset = @($release.assets | Where-Object { $_.name -eq $asset.Name }) | Select-Object -First 1
 if ($existingAsset) { throw "Asset already exists on this release: $($asset.Name). Remove it in GitHub first if you intend to replace it." }
 $uploadBase = $release.upload_url -replace '\{\?name,label\}$', ''
+Add-Type -AssemblyName System.Net.Http
 $client = [System.Net.Http.HttpClient]::new()
 $client.Timeout = [TimeSpan]::FromHours(2)
 $client.DefaultRequestHeaders.Authorization = [System.Net.Http.Headers.AuthenticationHeaderValue]::new('Bearer', $token)
