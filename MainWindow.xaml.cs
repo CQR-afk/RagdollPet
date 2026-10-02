@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
@@ -319,6 +320,8 @@ public partial class MainWindow : Window
     private double fadeSpeed = .32;
     private bool dragging;
     private LocalAgentChatWindow? localAgentChat;
+    private readonly VoiceRecognitionService voiceRecognition = new();
+    private bool voiceReplyPending;
     private System.Windows.Point dragStart;
     private System.Windows.Point windowStart;
 
@@ -346,6 +349,8 @@ public partial class MainWindow : Window
         menu.Items.Add("伸懒腰", null, (_, _) => Dispatcher.Invoke(Stretch));
         menu.Items.Add("睡一会儿", null, (_, _) => Dispatcher.Invoke(Sleep));
         menu.Items.Add("继续散步", null, (_, _) => Dispatcher.Invoke(() => StartWalking(false)));
+        menu.Items.Add(voiceRecognition.IsListening ? "关闭语音互动" : "开启语音互动（麦克风）",
+            null, (_, _) => Dispatcher.Invoke(ToggleVoiceInteraction));
         var directionMenu = new Forms.ToolStripMenuItem("方向测试");
         directionMenu.DropDownItems.Add("Left", null, (_, _) => Dispatcher.Invoke(() => SetManualDirection(DirectionPose.Left)));
         directionMenu.DropDownItems.Add("Left3Q", null, (_, _) => Dispatcher.Invoke(() => SetManualDirection(DirectionPose.Left3Q)));
@@ -1587,7 +1592,9 @@ public partial class MainWindow : Window
         {
             basePose = BasePose.Sleep;
             state = PetState.Sleeping;
-            SetFrame(sleepEnter[7]);
+            // The sleep-enter sequence contains the full lie-down motion. Hold
+            // its authored final frame; frame 7 is only an early transition pose.
+            SetFrame(sleepEnter[^1]);
             StopSequence();
             stateUntil = DateTime.Now.AddSeconds(random.Next(10, 20));
             SetNextDecision(1, 2);
@@ -1779,6 +1786,7 @@ public partial class MainWindow : Window
     {
         var menu = new System.Windows.Controls.ContextMenu();
         AddMenu(menu, "和团团聊聊（本地 AI）", OpenLocalAgentChat);
+        AddMenu(menu, voiceRecognition.IsListening ? "关闭语音互动" : "开启语音互动（麦克风）", ToggleVoiceInteraction);
         menu.Items.Add(new System.Windows.Controls.Separator());
         AddMenu(menu, "挥爪", Paw);
         AddMenu(menu, "低头闻一闻", Sniff);
@@ -1805,14 +1813,143 @@ public partial class MainWindow : Window
 
     private void OpenLocalAgentChat()
     {
-        localAgentChat ??= new LocalAgentChatWindow(PerformAgentPetAction) { Owner = this };
+        localAgentChat ??= CreateLocalAgentChat();
         localAgentChat.OpenPinned();
     }
+
+    private LocalAgentChatWindow CreateLocalAgentChat()
+    {
+        var chat = new LocalAgentChatWindow(PerformAgentPetAction) { Owner = this };
+        chat.VoiceReplyReady += reply => Say(reply.Length > 100 ? reply[..100] + "…" : reply, 6);
+        return chat;
+    }
+
+    private void ToggleVoiceInteraction()
+    {
+        if (voiceRecognition.IsListening)
+        {
+            voiceRecognition.Stop();
+            Say("好啦，我先不听啦。", 2.5);
+            return;
+        }
+
+        try
+        {
+            voiceRecognition.TextRecognized -= HandleVoiceRecognition;
+            voiceRecognition.TextRecognized += HandleVoiceRecognition;
+            voiceRecognition.Start();
+            Say("我开始听啦，跟我说说话吧～", 3.5);
+        }
+        catch (Exception ex)
+        {
+            voiceRecognition.Stop();
+            string detail = "请检查 Windows 设置 > 隐私和安全性 > 麦克风中的桌面应用访问权限、默认输入设备，以及中文语音组件。\n\n" + ex.Message.Trim();
+            Say("语音互动没能启动。", 3);
+            System.Windows.MessageBox.Show(this, detail, "团团语音互动", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void HandleVoiceRecognition(string text)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (text.StartsWith("\u0001", StringComparison.Ordinal))
+            {
+                voiceRecognition.Stop();
+                Say("麦克风识别暂时不可用。", 3);
+                System.Windows.MessageBox.Show(this,
+                    "Windows 语音识别中断了。请检查麦克风权限、默认输入设备和中文语音识别组件。\n\n" + text[1..],
+                    "团团语音互动", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (voiceReplyPending)
+            {
+                Say("我还在想刚才那句话，等我一下喵～", 3);
+                return;
+            }
+
+            twitchEar = random.Next(3);
+            earTwitchStarted = DateTime.Now;
+            string spoken = text.Length > 32 ? text[..32] + "…" : text;
+
+            bool actionMatched = true;
+            if (ContainsVoiceIntent(text, "挥爪", "挥挥爪", "招手", "你好", "嗨", "过来"))
+            {
+                Paw();
+            }
+            else if (ContainsVoiceIntent(text, "睡觉", "趴下", "休息"))
+            {
+                Sleep();
+            }
+            else if (ContainsVoiceIntent(text, "醒醒", "起床", "起来"))
+            {
+                Wake();
+            }
+            else if (ContainsVoiceIntent(text, "坐下", "坐一会"))
+            {
+                SitStay();
+            }
+            else if (ContainsVoiceIntent(text, "散步", "走走", "去玩"))
+            {
+                StartWalking(false);
+            }
+            else if (ContainsVoiceIntent(text, "伸懒腰", "伸个懒腰"))
+            {
+                Stretch();
+            }
+            else if (ContainsVoiceIntent(text, "洗脸", "舔爪", "梳毛"))
+            {
+                Groom();
+            }
+            else if (ContainsVoiceIntent(text, "眨眼", "眨眨眼"))
+            {
+                TriggerBlink();
+            }
+            else
+            {
+                actionMatched = false;
+                TriggerBlink();
+            }
+
+            Say(actionMatched ? "喵，我听到啦，马上回你～" : $"听到啦：「{spoken}」我想想怎么回答～", 4);
+            _ = SendVoiceTextToModelAsync(text, spoken);
+        });
+    }
+
+    private async Task SendVoiceTextToModelAsync(string text, string shortText)
+    {
+        if (voiceReplyPending)
+        {
+            Say("我还在想刚才那句话，等我一下喵～", 3);
+            return;
+        }
+
+        voiceReplyPending = true;
+        try
+        {
+            localAgentChat ??= CreateLocalAgentChat();
+            string? reply = await localAgentChat.GenerateVoiceReplyAsync(text);
+            if (reply is null)
+                Say($"听到啦：「{shortText}」不过本地模型暂时没连上。", 5);
+        }
+        catch (Exception)
+        {
+            Say($"听到啦：「{shortText}」不过本地模型暂时没连上。", 5);
+        }
+        finally
+        {
+            voiceReplyPending = false;
+        }
+    }
+
+    private static bool ContainsVoiceIntent(string text, params string[] phrases) =>
+        phrases.Any(phrase => text.Contains(phrase, StringComparison.OrdinalIgnoreCase));
 
     private void Pet_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
     {
         if (dragging) return;
-        localAgentChat ??= new LocalAgentChatWindow(PerformAgentPetAction) { Owner = this };
+        localAgentChat ??= CreateLocalAgentChat();
         localAgentChat.SetPetHover(true);
         localAgentChat.ShowForPetHover();
     }
@@ -1853,6 +1990,7 @@ public partial class MainWindow : Window
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
+        voiceRecognition.Dispose();
         localAgentChat?.Close();
         trayIcon.Visible = false;
         trayIcon.Dispose();

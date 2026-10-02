@@ -27,7 +27,7 @@
 
 ## 本地 AI Agent
 
-使用已安装的 Ollama，并可在聊天窗中切换其本地模型。推荐 `qwen3:14b` 作为中文日常聊天和工具调用主力（Ollama 模型文件约 9.3GB）；`gpt-oss:20b` 可作为强推理模型（本机实测 8K 上下文下约 12GB、100% GPU 常驻；建议先保持 8K，增大上下文会增加显存占用）。模型目录为 `E:\desktop pets\OllamaModels`，由用户级 `OLLAMA_MODELS` 配置。聊天只连接 `http://127.0.0.1:11434`，对话暂存在聊天窗口内存，关闭后清空。
+使用已安装的 Ollama，并可在聊天窗中切换其本地模型。完整版推荐 `qwen3:14b`（约 9.3GB）；`gpt-oss:20b` 可作为强推理模型（本机实测 8K 上下文下约 12GB 显存）。另提供 8GB 显存轻量配置，默认使用 `qwen3:4b`（Q4_K_M 模型文件约 2.5GB），为显存中的上下文缓存和桌宠渲染留下更多空间。聊天只连接 `http://127.0.0.1:11434`，历史对话保存在当前 Windows 用户的 `%LOCALAPPDATA%\RagdollPet\chat-history.json`。
 
 Agent 工具有：固定桌宠动作；按需列出目录/读取 UTF-8 文本（每个文件最多 1MB）；经逐项确认后创建或覆盖文件、删除单个文件、运行 PowerShell（最长 60 秒）。文件写入/删除与每条命令都会先展示完整目标/内容并要求确认，取消则不执行。Agent 不会自行扫描全盘，也不会自行把文件内容发送到外部服务。
 
@@ -42,6 +42,16 @@ powershell -ExecutionPolicy Bypass -File .\Tools\setup-local-agent.ps1
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\Tools\setup-local-agent.ps1 -IncludeReasoningModel
 ```
+
+### 8GB 显存轻量版
+
+轻量版采用 `qwen3:4b`，模型下载约 2.5GB；它不会删除或覆盖已有模型。先运行 `Tools\setup-lightweight-agent.ps1`，再使用轻量版程序即可。若要从源码生成独立的 Windows x64 桌宠程序包（需要另装 Ollama）：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\Tools\build-lightweight.ps1
+```
+
+程序包输出至 `dist\RagdollPet-Lightweight-8GB`，其中附有模型配置，聊天界面会优先选择 `qwen3:4b`。Ollama 模型单独保存在 Ollama 当前使用的模型目录中，不重复塞进桌宠程序包。
 
 ## 开发
 

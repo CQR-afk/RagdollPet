@@ -31,6 +31,54 @@
             <DropShadowEffect Color="#775C55" BlurRadius="22" ShadowDepth="5" Opacity="0.22"/>
         </Border.Effect>
         <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="SidebarColumn" Width="0"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border x:Name="ConversationSidebar" Grid.Column="0" Visibility="Collapsed"
+                    Background="#FFF5EAE3" CornerRadius="18" Margin="0,0,10,0" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Margin="1,2,1,13">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="🐾" FontSize="21" Margin="0,0,8,0"/>
+                            <StackPanel>
+                                <TextBlock Text="团团的聊天" FontWeight="Bold" FontSize="15"/>
+                                <TextBlock Text="本地保存 · 仅此设备" FontSize="10" Foreground="#A18179"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="＋" ToolTip="新建聊天" Style="{StaticResource PillButton}"
+                                Padding="9,5" Click="NewConversation_Click"/>
+                    </Grid>
+                    <Border Grid.Row="1" Background="#FFFFFCF8" BorderBrush="#EAD8CE" BorderThickness="1"
+                            CornerRadius="11" Padding="8,4" Margin="0,0,0,10">
+                        <DockPanel>
+                            <TextBlock Text="⌕" FontSize="16" Foreground="#A18179" Margin="0,0,6,0"/>
+                            <TextBox x:Name="ConversationSearchBox" BorderThickness="0" Background="Transparent"
+                                     VerticalContentAlignment="Center" ToolTip="搜索本地聊天记录" TextChanged="ConversationSearch_TextChanged"/>
+                        </DockPanel>
+                    </Border>
+                    <TextBlock Grid.Row="2" Text="最近的聊天" FontSize="11" Foreground="#9B7770" Margin="4,2,0,5"/>
+                    <ListBox x:Name="ConversationList" Grid.Row="3" Background="Transparent" BorderThickness="0"
+                             SelectionChanged="ConversationList_SelectionChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding UpdatedLabel}" FontSize="10" Foreground="#A58F87" Margin="0,3,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Grid.Row="4" Content="删除当前聊天" Style="{StaticResource PillButton}"
+                            HorizontalAlignment="Stretch" Foreground="#9C6258" Margin="0,9,0,0" Click="DeleteConversation_Click"/>
+                </Grid>
+            </Border>
+            <Grid x:Name="ChatPane" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -39,10 +87,13 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" Margin="1,0,0,11">
+            <Grid Grid.Row="0" Margin="1,0,0,11" MouseLeftButtonDown="Header_DragMove">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Border Width="42" Height="42" CornerRadius="21" Background="#FFF2D9D2" VerticalAlignment="Center">
@@ -52,7 +103,15 @@
                     <TextBlock Text="团团的小窝" FontSize="19" FontWeight="Bold"/>
                     <TextBlock Text="想说什么悄悄告诉我～" FontSize="11" Foreground="#A18179" Margin="0,2,0,0"/>
                 </StackPanel>
-                <Button Grid.Column="2" Content="×" ToolTip="收起聊天框" Style="{StaticResource PillButton}"
+                <Button x:Name="FullInterfaceButton" Grid.Column="2" Content="⤢" ToolTip="打开完整聊天界面" Style="{StaticResource PillButton}"
+                        Padding="9,5" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="FullInterface_Click"/>
+                <Button x:Name="CompactButton" Grid.Column="2" Content="↙" ToolTip="收回桌面浮窗" Style="{StaticResource PillButton}"
+                        Padding="9,5" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed" Click="Compact_Click"/>
+                <Button x:Name="MinimizeButton" Grid.Column="3" Content="—" ToolTip="最小化" Style="{StaticResource PillButton}"
+                        Padding="9,4" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed" Click="Minimize_Click"/>
+                <Button x:Name="MaximizeButton" Grid.Column="4" Content="□" ToolTip="最大化 / 还原" Style="{StaticResource PillButton}"
+                        Padding="9,4" Margin="0,0,5,0" HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed" Click="Maximize_Click"/>
+                <Button Grid.Column="5" Content="×" ToolTip="收起聊天框" Style="{StaticResource PillButton}"
                         Padding="9,4" Margin="0,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                         Click="ClosePopup_Click"/>
             </Grid>
@@ -102,6 +161,7 @@
             </Grid>
             <TextBlock Grid.Row="4" Text="🔒 只连接本机。文件或命令操作会先征求你的同意。"
                        FontSize="10" Foreground="#A58F87" TextWrapping="Wrap" HorizontalAlignment="Center"/>
+            </Grid>
         </Grid>
     </Border>
 </Window>

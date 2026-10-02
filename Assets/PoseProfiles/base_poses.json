@@ -41,11 +41,11 @@
       "bodyWarpLimitPercent": 1.0
     },
     "Lie_Base": {
-      "runtimeSource": "SpritesDense/sleep_enter/sleep_enter_07.png",
+      "runtimeSource": "SpritesDense/sleep_enter/sleep_enter_028.png",
       "status": "planned"
     },
     "Sleep_Base": {
-      "runtimeSource": "SpritesDense/sleep_enter/sleep_enter_07.png",
+      "runtimeSource": "SpritesDense/sleep_enter/sleep_enter_028.png",
       "breathAmplitude": 0.0025,
       "breathHz": 0.20,
       "status": "runtime-stable; layered-atlas-planned"

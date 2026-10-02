@@ -9,9 +9,10 @@
     <AssemblyName>团团2.5D桌宠</AssemblyName>
     <RootNamespace>RagdollPet</RootNamespace>
     <ApplicationIcon>Assets\pet.ico</ApplicationIcon>
-    <DefaultItemExcludes>$(DefaultItemExcludes);.verify\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);.verify\**;obj\**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Speech" Version="8.0.0" />
     <Compile Remove="LegacyProgram.cs" />
     <Content Include="Assets\Sprites\**\*.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\SpritesDense\**\*.png" CopyToOutputDirectory="PreserveNewest" />

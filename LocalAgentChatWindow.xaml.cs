@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.IO;
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,8 +14,34 @@ namespace RagdollPet;
 
 public partial class LocalAgentChatWindow : Window
 {
+    private sealed class ChatHistoryStore
+    {
+        public string? CurrentConversationId { get; set; }
+        public List<ChatConversation> Conversations { get; set; } = [];
+    }
+
+    private sealed class ChatConversation
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString("N");
+        public string Title { get; set; } = "新聊天";
+        public string Model { get; set; } = PreferredModel;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public List<JsonElement> Messages { get; set; } = [];
+    }
+
+    private sealed class ConversationListItem(string id, string title, string updatedLabel)
+    {
+        public string Id { get; } = id;
+        public string Title { get; } = title;
+        public string UpdatedLabel { get; } = updatedLabel;
+    }
+
     private const string DefaultEndpoint = "http://127.0.0.1:11434";
     private const string RecommendedModel = "qwen3:14b";
+    private static readonly string PreferredModel = LoadPreferredModel();
+    private static readonly bool HasPreferredModelProfile = File.Exists(
+        Path.Combine(AppContext.BaseDirectory, "preferred-model.txt"));
     private const int ContextWindow = 8192;
     private const string SystemPrompt = """
         你是 Windows 桌面上的布偶猫团团，和主人用简体中文聊天。语气亲切、自然、简短。
@@ -23,23 +50,64 @@ public partial class LocalAgentChatWindow : Window
         读取与列目录也只限用户要求的内容。不要扫描整个电脑、读取凭据/密钥，或将文件内容发送给外部服务。所有本地模型对话只发往本机 Ollama；不得通过命令联网传输数据，除非用户明确要求该联网操作并在确认框中批准完整命令。
         每轮最多请求 4 个工具操作。工具完成后用简短中文总结实际结果，不要声称执行了失败或被拒绝的操作。
         """;
+    private const string VoiceSystemPrompt = """
+        你是 Windows 桌面上的布偶猫团团。主人刚通过麦克风和你说话，语音已在本机转成文字。
+        用简体中文给出温柔、自然、简短的回应，通常一两句话。不要声称听到了文字以外的内容，不要声称执行桌面操作；语音对话不提供文件、命令或其他工具。
+        """;
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(3) };
     private readonly Action<string> performPetAction;
     private readonly List<object> messages = [];
+    private readonly ObservableCollection<ConversationListItem> conversationItems = [];
+    private readonly List<ChatConversation> conversations = [];
+    private ChatConversation? currentConversation;
+    private readonly string historyPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RagdollPet", "chat-history.json");
+    private bool rebuildingConversationList;
+    private bool fullInterface;
+    private Window? petOwner;
+    private const double CompactWidth = 390;
+    private const double CompactHeight = 535;
     private bool busy;
     private bool modelReady;
     private bool refreshingModels;
     private bool pointerOverPet;
     private bool pinnedOpen;
-    private string selectedModel = RecommendedModel;
+    private string selectedModel = PreferredModel;
     private string endpoint = DefaultEndpoint;
     private readonly DispatcherTimer hideTimer;
+
+    private static string LoadPreferredModel()
+    {
+        try
+        {
+            string profilePath = Path.Combine(AppContext.BaseDirectory, "preferred-model.txt");
+            string? model = File.Exists(profilePath) ? File.ReadAllText(profilePath).Trim() : null;
+            return string.IsNullOrWhiteSpace(model) ? RecommendedModel : model;
+        }
+        catch
+        {
+            return RecommendedModel;
+        }
+    }
+
+    public event Action<string>? VoiceReplyReady;
 
     public LocalAgentChatWindow(Action<string> performPetAction)
     {
         InitializeComponent();
         this.performPetAction = performPetAction;
+        ConversationList.ItemsSource = conversationItems;
+        LoadHistory();
+        if (currentConversation is null)
+        {
+            CreateConversation();
+            AddBubble("团团", "喵～我准备好陪你聊天啦。", false);
+        }
+        else
+        {
+            RestoreCurrentConversation();
+        }
         hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(850) };
         hideTimer.Tick += (_, _) =>
         {
@@ -49,17 +117,20 @@ public partial class LocalAgentChatWindow : Window
         MouseEnter += (_, _) => hideTimer.Stop();
         MouseLeave += (_, _) => ScheduleAutoHide();
         PreviewMouseDown += (_, _) => pinnedOpen = true;
-        AddBubble("团团", "喵～我准备好陪你聊天啦。", false);
         Loaded += async (_, _) =>
         {
-            if (Owner is Window owner) owner.LocationChanged += Owner_LocationChanged;
+            if (Owner is Window owner)
+            {
+                petOwner = owner;
+                owner.LocationChanged += Owner_LocationChanged;
+            }
             PositionBesideOwner();
             await CheckConnectionAsync();
         };
         Closed += (_, _) =>
         {
             hideTimer.Stop();
-            if (Owner is Window owner) owner.LocationChanged -= Owner_LocationChanged;
+            if (petOwner is not null) petOwner.LocationChanged -= Owner_LocationChanged;
         };
     }
 
@@ -90,15 +161,92 @@ public partial class LocalAgentChatWindow : Window
 
     private void ClosePopup_Click(object sender, RoutedEventArgs e)
     {
+        if (fullInterface)
+        {
+            CompactToPopup(hideAfter: true);
+            return;
+        }
         pinnedOpen = false;
         pointerOverPet = false;
         hideTimer.Stop();
         Hide();
     }
 
+    private void FullInterface_Click(object sender, RoutedEventArgs e)
+    {
+        SaveCurrentConversation();
+        fullInterface = true;
+        pinnedOpen = true;
+        hideTimer.Stop();
+        if (petOwner is not null) petOwner.LocationChanged -= Owner_LocationChanged;
+        Owner = null;
+        Topmost = false;
+        ShowInTaskbar = true;
+        ResizeMode = ResizeMode.CanResize;
+        Width = 1220;
+        Height = 820;
+        var workArea = SystemParameters.WorkArea;
+        Width = Math.Min(Width, workArea.Width - 32);
+        Height = Math.Min(Height, workArea.Height - 32);
+        MinWidth = Math.Min(900, Width);
+        MinHeight = Math.Min(620, Height);
+        Left = workArea.Left + (workArea.Width - Width) / 2;
+        Top = workArea.Top + (workArea.Height - Height) / 2;
+        SidebarColumn.Width = new GridLength(260);
+        ConversationSidebar.Visibility = Visibility.Visible;
+        FullInterfaceButton.Visibility = Visibility.Collapsed;
+        CompactButton.Visibility = Visibility.Visible;
+        MinimizeButton.Visibility = Visibility.Visible;
+        MaximizeButton.Visibility = Visibility.Visible;
+        if (!IsVisible) Show();
+        Activate();
+    }
+
+    private void Compact_Click(object sender, RoutedEventArgs e) => CompactToPopup(hideAfter: false);
+
+    private void Minimize_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+
+    private void Maximize_Click(object sender, RoutedEventArgs e) =>
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    private void CompactToPopup(bool hideAfter)
+    {
+        fullInterface = false;
+        SidebarColumn.Width = new GridLength(0);
+        ConversationSidebar.Visibility = Visibility.Collapsed;
+        FullInterfaceButton.Visibility = Visibility.Visible;
+        CompactButton.Visibility = Visibility.Collapsed;
+        MinimizeButton.Visibility = Visibility.Collapsed;
+        MaximizeButton.Visibility = Visibility.Collapsed;
+        Width = CompactWidth;
+        Height = CompactHeight;
+        MinWidth = 350;
+        MinHeight = 460;
+        ResizeMode = ResizeMode.NoResize;
+        ShowInTaskbar = false;
+        if (petOwner is not null)
+        {
+            Owner = petOwner;
+            petOwner.LocationChanged -= Owner_LocationChanged;
+            petOwner.LocationChanged += Owner_LocationChanged;
+        }
+        Topmost = true;
+        if (hideAfter)
+        {
+            pinnedOpen = false;
+            Hide();
+        }
+        else
+        {
+            pinnedOpen = true;
+            PositionBesideOwner();
+            Activate();
+        }
+    }
+
     private void Owner_LocationChanged(object? sender, EventArgs e)
     {
-        if (IsVisible) PositionBesideOwner();
+        if (IsVisible && !fullInterface) PositionBesideOwner();
     }
 
     private void PositionBesideOwner()
@@ -114,6 +262,167 @@ public partial class LocalAgentChatWindow : Window
     private void ScheduleAutoHide()
     {
         if (!pinnedOpen && !pointerOverPet && !busy && IsVisible) hideTimer.Start();
+    }
+
+    private void Header_DragMove(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+    }
+
+    private void LoadHistory()
+    {
+        try
+        {
+            if (!File.Exists(historyPath)) return;
+            var store = JsonSerializer.Deserialize<ChatHistoryStore>(File.ReadAllText(historyPath));
+            if (store is null) return;
+            conversations.AddRange(store.Conversations ?? []);
+            currentConversation = conversations.FirstOrDefault(item => item.Id == store.CurrentConversationId)
+                ?? conversations.OrderByDescending(item => item.UpdatedAt).FirstOrDefault();
+            if (currentConversation is not null && !HasPreferredModelProfile)
+                selectedModel = currentConversation.Model;
+            RefreshConversationList();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            StatusText.Text = "本地聊天记录暂时无法读取";
+        }
+    }
+
+    private void CreateConversation()
+    {
+        currentConversation = new ChatConversation { Model = selectedModel };
+        conversations.Add(currentConversation);
+        messages.Clear();
+        HistoryPanel.Children.Clear();
+        RefreshConversationList();
+        SaveCurrentConversation();
+    }
+
+    private void RestoreCurrentConversation()
+    {
+        if (currentConversation is null) return;
+        string requestedModel = HasPreferredModelProfile ? PreferredModel : currentConversation.Model;
+        selectedModel = ModelSelector.Items.Count == 0 || ModelSelector.Items.Contains(requestedModel)
+            ? requestedModel
+            : ModelSelector.SelectedItem as string ?? PreferredModel;
+        currentConversation.Model = selectedModel;
+        messages.Clear();
+        messages.AddRange(currentConversation.Messages.Select(item => (object)item.Clone()));
+        refreshingModels = true;
+        if (ModelSelector.Items.Contains(selectedModel)) ModelSelector.SelectedItem = selectedModel;
+        refreshingModels = false;
+        RenderTranscript();
+        RefreshConversationList();
+    }
+
+    private void RenderTranscript()
+    {
+        HistoryPanel.Children.Clear();
+        int visibleMessages = 0;
+        foreach (var message in messages)
+        {
+            JsonElement element;
+            try { element = JsonSerializer.SerializeToElement(message); }
+            catch (JsonException) { continue; }
+            if (!element.TryGetProperty("role", out var roleValue) || roleValue.ValueKind != JsonValueKind.String ||
+                !element.TryGetProperty("content", out var contentValue) || contentValue.ValueKind != JsonValueKind.String) continue;
+            string role = roleValue.GetString() ?? "";
+            string content = contentValue.GetString() ?? "";
+            if (role is not ("user" or "assistant") || string.IsNullOrWhiteSpace(content)) continue;
+            AddBubble(role == "user" ? "你" : "团团", content, role == "user");
+            visibleMessages++;
+        }
+        if (visibleMessages == 0) AddBubble("团团", "喵～我准备好陪你聊天啦。", false);
+        HistoryScroll.ScrollToEnd();
+    }
+
+    private void SaveCurrentConversation()
+    {
+        if (currentConversation is null) return;
+        currentConversation.Model = selectedModel;
+        currentConversation.Messages = messages.Select(message => JsonSerializer.SerializeToElement(message)).ToList();
+        currentConversation.UpdatedAt = DateTime.Now;
+        foreach (var message in currentConversation.Messages)
+        {
+            if (!message.TryGetProperty("role", out var role) || role.GetString() != "user" ||
+                !message.TryGetProperty("content", out var content) || content.ValueKind != JsonValueKind.String) continue;
+            string firstUserText = content.GetString()?.Trim() ?? "";
+            if (firstUserText.Length > 0)
+                currentConversation.Title = firstUserText.Length > 30 ? firstUserText[..30] + "…" : firstUserText;
+            break;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(historyPath)!);
+            var store = new ChatHistoryStore
+            {
+                CurrentConversationId = currentConversation.Id,
+                Conversations = conversations.OrderByDescending(item => item.UpdatedAt).ToList()
+            };
+            string temporaryPath = historyPath + ".tmp";
+            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(store, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporaryPath, historyPath, true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            StatusText.Text = "无法保存本地聊天记录";
+        }
+        RefreshConversationList();
+    }
+
+    private void RefreshConversationList()
+    {
+        if (ConversationList is null) return;
+        string filter = ConversationSearchBox?.Text.Trim() ?? "";
+        rebuildingConversationList = true;
+        conversationItems.Clear();
+        foreach (var conversation in conversations.OrderByDescending(item => item.UpdatedAt)
+                     .Where(item => filter.Length == 0 || item.Title.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+        {
+            conversationItems.Add(new ConversationListItem(conversation.Id, conversation.Title,
+                conversation.UpdatedAt.ToString("MM-dd HH:mm")));
+        }
+        ConversationList.SelectedItem = conversationItems.FirstOrDefault(item => item.Id == currentConversation?.Id);
+        rebuildingConversationList = false;
+    }
+
+    private void NewConversation_Click(object sender, RoutedEventArgs e)
+    {
+        if (busy) return;
+        SaveCurrentConversation();
+        CreateConversation();
+        AddBubble("团团", "新的聊天开始啦，想聊点什么？", false);
+    }
+
+    private void ConversationSearch_TextChanged(object sender, TextChangedEventArgs e) => RefreshConversationList();
+
+    private void ConversationList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (rebuildingConversationList || busy || ConversationList.SelectedItem is not ConversationListItem item ||
+            currentConversation?.Id == item.Id) return;
+        SaveCurrentConversation();
+        currentConversation = conversations.FirstOrDefault(conversation => conversation.Id == item.Id);
+        RestoreCurrentConversation();
+    }
+
+    private void DeleteConversation_Click(object sender, RoutedEventArgs e)
+    {
+        if (busy || currentConversation is null) return;
+        var answer = System.Windows.MessageBox.Show(this, "删除当前聊天记录？此操作无法撤销。", "团团的小窝",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (answer != MessageBoxResult.Yes) return;
+        conversations.Remove(currentConversation);
+        currentConversation = null;
+        messages.Clear();
+        if (conversations.Count == 0) CreateConversation();
+        else
+        {
+            currentConversation = conversations.OrderByDescending(item => item.UpdatedAt).First();
+            RestoreCurrentConversation();
+        }
+        SaveCurrentConversation();
     }
 
     private async Task CheckConnectionAsync()
@@ -133,13 +442,13 @@ public partial class LocalAgentChatWindow : Window
             refreshingModels = true;
             ModelSelector.ItemsSource = models.Cast<object>().ToArray();
             string? preferred = models.FirstOrDefault(name => name!.Equals(selectedModel, StringComparison.OrdinalIgnoreCase))
-                ?? models.FirstOrDefault(name => name!.Equals(RecommendedModel, StringComparison.OrdinalIgnoreCase))
+                ?? models.FirstOrDefault(name => name!.Equals(PreferredModel, StringComparison.OrdinalIgnoreCase))
                 ?? models.FirstOrDefault(name => name!.Equals("gpt-oss:20b", StringComparison.OrdinalIgnoreCase))
                 ?? models.FirstOrDefault();
             if (preferred is null)
             {
                 modelReady = false;
-                ModelSelector.Text = "尚无模型 · 建议安装 qwen3:14b";
+                ModelSelector.Text = $"尚无模型 · 建议安装 {PreferredModel}";
                 SetBusy(false, "Ollama 服务正常，但尚未下载模型。安装后点“重试连接”。");
                 refreshingModels = false;
                 return;
@@ -258,9 +567,7 @@ public partial class LocalAgentChatWindow : Window
     {
         if (refreshingModels || ModelSelector.SelectedItem is not string model || model == selectedModel) return;
         selectedModel = model;
-        messages.Clear();
-        HistoryPanel.Children.Clear();
-        AddBubble("团团", $"切换到本地模型 {selectedModel}，我们重新开始这一段聊天吧。", false);
+        if (currentConversation is not null) SaveCurrentConversation();
         await CheckConnectionAsync();
     }
 
@@ -283,6 +590,7 @@ public partial class LocalAgentChatWindow : Window
         InputBox.Clear();
         AddBubble("你", text, true);
         messages.Add(new { role = "user", content = text });
+        SaveCurrentConversation();
         SetBusy(true, "团团正在想…");
         try
         {
@@ -299,11 +607,13 @@ public partial class LocalAgentChatWindow : Window
                 if (!assistant.TryGetProperty("tool_calls", out var calls) || calls.ValueKind != JsonValueKind.Array || calls.GetArrayLength() == 0)
                 {
                     messages.Add(new { role = "assistant", content = reply });
+                    SaveCurrentConversation();
                     needsFinalAnswer = false;
                     break;
                 }
 
                 messages.Add(new { role = "assistant", content = reply, tool_calls = calls.Clone() });
+                SaveCurrentConversation();
                 foreach (var call in calls.EnumerateArray().Take(4))
                 {
                     var function = call.GetProperty("function");
@@ -320,6 +630,7 @@ public partial class LocalAgentChatWindow : Window
                         operationsRun++;
                     }
                     messages.Add(new { role = "tool", tool_name = name, content = result });
+                    SaveCurrentConversation();
                 }
                 needsFinalAnswer = true;
                 if (operationsRun >= 4) break;
@@ -333,6 +644,7 @@ public partial class LocalAgentChatWindow : Window
                 var finalMessage = finalDoc.RootElement.GetProperty("message");
                 reply = finalMessage.TryGetProperty("content", out var finalContent) ? finalContent.GetString() ?? "" : "";
                 messages.Add(new { role = "assistant", content = reply });
+                SaveCurrentConversation();
             }
 
             AddBubble("团团", string.IsNullOrWhiteSpace(reply) ? "喵？我刚刚走神了一下。" : reply.Trim(), false);
@@ -356,19 +668,64 @@ public partial class LocalAgentChatWindow : Window
         }
     }
 
-    private Task<HttpResponseMessage> PostChatAsync(bool includeTools)
+    public async Task<string?> GenerateVoiceReplyAsync(string spokenText)
+    {
+        if (busy) return null;
+        string text = spokenText.Trim();
+        if (text.Length == 0) return null;
+        object? voiceMessage = null;
+        try
+        {
+            if (!modelReady) await CheckConnectionAsync();
+            if (!modelReady) return null;
+
+            voiceMessage = new { role = "user", content = text };
+            messages.Add(voiceMessage);
+            SaveCurrentConversation();
+            AddBubble("你", text, true);
+            SetBusy(true, $"团团正在用本地模型 {selectedModel} 回应语音…");
+            bool disableThinking = selectedModel.StartsWith("qwen3", StringComparison.OrdinalIgnoreCase);
+            using var response = await PostChatAsync(includeTools: false, systemPrompt: VoiceSystemPrompt,
+                think: disableThinking ? false : null);
+            response.EnsureSuccessStatusCode();
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var assistant = document.RootElement.GetProperty("message");
+            string reply = assistant.TryGetProperty("content", out var content) ? content.GetString() ?? "" : "";
+            reply = reply.Trim();
+            if (reply.Length == 0) reply = "喵～我听到啦。";
+            messages.Add(new { role = "assistant", content = reply });
+            SaveCurrentConversation();
+            AddBubble("团团", reply, false);
+            VoiceReplyReady?.Invoke(reply);
+            SetBusy(false, $"本地模型：{selectedModel}");
+            return reply;
+        }
+        catch (Exception)
+        {
+            if (voiceMessage is not null)
+            {
+                int failedMessageIndex = messages.LastIndexOf(voiceMessage);
+                if (failedMessageIndex >= 0) messages.RemoveAt(failedMessageIndex);
+            }
+            SetBusy(false, "本地模型暂时没有回应语音。");
+            return null;
+        }
+    }
+
+    private Task<HttpResponseMessage> PostChatAsync(bool includeTools, string? systemPrompt = null, bool? think = null)
     {
         var payload = new Dictionary<string, object?>
         {
             ["model"] = selectedModel,
             ["stream"] = false,
-            ["messages"] = new object[] { new { role = "system", content = SystemPrompt } }.Concat(messages).ToArray(),
+            ["messages"] = new object[] { new { role = "system", content = systemPrompt ?? SystemPrompt } }.Concat(messages).ToArray(),
             ["options"] = new { num_ctx = ContextWindow, temperature = 0.65 }
         };
         if (includeTools)
         {
             payload["tools"] = AgentToolExecutor.ToolDefinitions;
         }
+        if (think.HasValue) payload["think"] = think.Value;
         return Http.PostAsJsonAsync($"{endpoint}/api/chat", payload);
     }
 
